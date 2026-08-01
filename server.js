@@ -45,7 +45,16 @@ function getAnswer(text) {
 }
 
 // 🔹 Webhook Telegram
+// Telegram sends back whatever secret_token was set via setWebhook as this
+// header on every real call — verifying it stops anyone else from POSTing a
+// forged message.chat.id and getting the bot to relay FAQ text to it.
+const WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET;
+
 app.post("/webhook", async (req, res) => {
+  if (!WEBHOOK_SECRET || req.get("X-Telegram-Bot-Api-Secret-Token") !== WEBHOOK_SECRET) {
+    return res.status(401).send("Unauthorized");
+  }
+
   const message = req.body.message;
   if (message && message.text) {
     const chatId = message.chat.id;
